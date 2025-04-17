@@ -3,17 +3,14 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
-class DatabaseSeeder extends Seeder
+class UserSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // Criação do usuário ADMIN
+        // Usuário ADMIN
         User::create([
             'name' => 'Teles Barrigão',
             'email' => 'barrigaadmin@loja.com',
@@ -21,7 +18,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
         ]);
 
-        // Criação do usuário VENDEDOR
+        // Usuário VENDEDOR
         User::create([
             'name' => 'Teles Vendedor Barrigudão',
             'email' => 'barrigavendedor@loja.com',
@@ -29,18 +26,12 @@ class DatabaseSeeder extends Seeder
             'role' => 'vendedor',
         ]);
 
-        // Criação do usuário CLIENTE
+        // Usuário CLIENTE
         User::create([
             'name' => 'Teles Barriga grande',
             'email' => 'barrigacliente@loja.com',
             'password' => Hash::make('soubarrigudo123'),
             'role' => 'cliente',
-        ]);
-
-        // Chamada dos seeders adicionais (categorias e produtos)
-        $this->call([
-            CategoriaSeeder::class,
-            ProdutoSeeder::class,
         ]);
     }
 }

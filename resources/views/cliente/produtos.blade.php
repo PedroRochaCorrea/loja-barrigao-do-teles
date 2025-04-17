@@ -83,6 +83,10 @@
         .select2-selection__rendered {
             line-height: 24px;
         }
+
+        .select2-container {
+            width: 100% !important;
+        }
     </style>
 </head>
 <body>
@@ -99,8 +103,8 @@
             <div class="d-flex flex-wrap align-items-center gap-3">
                 <!-- Filtro com Select2 -->
                 <div style="min-width: 240px;">
-                    <select id="filtro-produto" class="form-select w-100" data-placeholder="Buscar produto...">
-                        <option value=""></option>
+                    <select id="filtro-produto" class="form-select w-100">
+                        <option value="">Buscar produto...</option>
                         @foreach($produtos as $produto)
                             <option value="{{ $produto->id }}">{{ $produto->name }}</option>
                         @endforeach
@@ -123,7 +127,7 @@
                 <div class="col-12 col-sm-6 col-md-4 col-lg-3 produto-card" data-id="{{ $produto->id }}">
                     <div class="card h-100 shadow-sm text-center border-0">
                         @if ($produto->photo)
-                            <img src="{{ asset('storage/' . $produto->photo) }}"
+                            <img src="{{ asset('images/' . $produto->photo) }}"
                                  alt="{{ $produto->name }}"
                                  class="card-img-top p-4"
                                  style="height: 180px; object-fit: contain;">
@@ -143,7 +147,6 @@
                                 <div class="mb-2">
                                     <input type="number"
                                            name="quantity"
-                                           id="quantity_{{ $produto->id }}"
                                            value="1"
                                            min="1"
                                            max="{{ $produto->stock }}"
@@ -170,12 +173,13 @@
     <!-- Script do filtro -->
     <script>
         $(document).ready(function() {
+            // Inicia o Select2 com placeholder
             $('#filtro-produto').select2({
                 placeholder: "Buscar produto...",
-                allowClear: true,
-                width: 'resolve'
+                allowClear: true
             });
 
+            // Lógica de filtro
             $('#filtro-produto').on('change', function () {
                 const selectedId = $(this).val();
 

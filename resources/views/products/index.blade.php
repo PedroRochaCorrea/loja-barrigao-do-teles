@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Gerenciamento</title> <!-- ✅ Nome da aba corrigido -->
+    <title>Gerenciamento</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Bootstrap -->
@@ -112,7 +112,7 @@
 </head>
 <body>
 <div class="container py-5">
-    <!-- Cabeçalho superior -->
+    <!-- Cabeçalho -->
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div class="brand">
             <span class="brand-loja">Loja</span>
@@ -124,7 +124,7 @@
         </form>
     </div>
 
-    <!-- Título da seção -->
+    <!-- Título -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="category-title">Gerenciar Produtos</h2>
@@ -136,12 +136,12 @@
         </div>
     </div>
 
-    <!-- Mensagem de sucesso -->
+    <!-- Alerta de sucesso -->
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <!-- Lista de produtos -->
+    <!-- Tabela ou mensagem -->
     @if($products->isEmpty())
         <div class="no-products">
             <h5>Nenhum produto cadastrado no momento.</h5>
@@ -164,7 +164,8 @@
                         <tr>
                             <td>
                                 @if($product->photo)
-                                    <img src="{{ asset('storage/' . $product->photo) }}" alt="Foto" width="60" class="rounded">
+                                    <!-- ✅ Corrigido: agora carrega de public/images -->
+                                    <img src="{{ asset('images/' . $product->photo) }}" alt="Foto" width="60" class="rounded">
                                 @else
                                     <span class="text-muted">Sem imagem</span>
                                 @endif
