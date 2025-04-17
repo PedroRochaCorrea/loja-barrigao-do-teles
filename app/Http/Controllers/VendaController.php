@@ -6,17 +6,24 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\CarrinhoService;
 
 class VendaController extends Controller
 {
+    protected $carrinho;
+
+    public function __construct(CarrinhoService $carrinho)
+    {
+        $this->carrinho = $carrinho;
+    }
+
     public function montarVenda()
     {
         $produtos = Product::all();
-        $carrinho = session()->get('venda_carrinho', []);
-        $total = $this->calcularTotal($carrinho);
+        $carrinho = $this->carrinho->listar('venda_carrinho');
+        $total = $this->carrinho->total('venda_carrinho');
 
         return view('vendedor.montar_venda', compact('produtos', 'carrinho', 'total'));
     }
@@ -34,44 +41,20 @@ class VendaController extends Controller
             return redirect()->back()->with('error', 'Estoque insuficiente para o produto selecionado.');
         }
 
-        $carrinho = session()->get('venda_carrinho', []);
-
-        $existe = false;
-        foreach ($carrinho as &$item) {
-            if ($item['produto_id'] == $produto->id) {
-                $item['quantidade'] += $request->quantidade;
-                $existe = true;
-                break;
-            }
-        }
-
-        if (!$existe) {
-            $carrinho[] = [
-                'produto_id' => $produto->id,
-                'nome' => $produto->name,
-                'preco' => $produto->price,
-                'quantidade' => $request->quantidade,
-            ];
-        }
-
-        session()->put('venda_carrinho', $carrinho);
+        $this->carrinho->adicionar('venda_carrinho', $produto, $request->quantidade);
 
         return redirect()->back()->with('success', 'Produto adicionado à venda.');
     }
 
     public function removerItem($id)
     {
-        $carrinho = session()->get('venda_carrinho', []);
-        $carrinho = array_filter($carrinho, fn($item) => $item['produto_id'] != $id);
-
-        session()->put('venda_carrinho', array_values($carrinho));
-
+        $this->carrinho->remover('venda_carrinho', $id);
         return redirect()->back()->with('success', 'Item removido da venda.');
     }
 
     public function esvaziarVenda()
     {
-        session()->forget('venda_carrinho');
+        $this->carrinho->limpar('venda_carrinho');
         return redirect()->back()->with('success', 'Venda esvaziada com sucesso.');
     }
 
@@ -81,16 +64,20 @@ class VendaController extends Controller
             'forma_pagamento' => 'required|in:Dinheiro,Cartão de Crédito,Cartão de Débito,Pix,Boleto,Outros',
         ]);
 
-        $carrinho = session()->get('venda_carrinho', []);
+        $carrinho = $this->carrinho->listar('venda_carrinho');
 
         if (empty($carrinho)) {
             return redirect()->back()->with('error', 'Nenhum produto na venda.');
         }
 
+        if (!$this->carrinho->validarEstoque('venda_carrinho')) {
+            return redirect()->back()->with('error', 'Estoque insuficiente em um ou mais itens.');
+        }
+
         DB::beginTransaction();
 
         try {
-            $total = $this->calcularTotal($carrinho);
+            $total = $this->carrinho->total('venda_carrinho');
 
             $venda = Sale::create([
                 'user_id' => auth()->id(),
@@ -101,10 +88,6 @@ class VendaController extends Controller
 
             foreach ($carrinho as $item) {
                 $produto = Product::findOrFail($item['produto_id']);
-
-                if ($produto->stock < $item['quantidade']) {
-                    throw new \Exception("Estoque insuficiente para o produto {$produto->name}");
-                }
 
                 SaleItem::create([
                     'sale_id' => $venda->id,
@@ -119,7 +102,7 @@ class VendaController extends Controller
             }
 
             DB::commit();
-            session()->forget('venda_carrinho');
+            $this->carrinho->limpar('venda_carrinho');
 
             return redirect()->route('vendedor.vendas.historico')->with('success', 'Venda registrada com sucesso.');
         } catch (\Exception $e) {
@@ -132,10 +115,5 @@ class VendaController extends Controller
     {
         $vendas = Sale::with('itens.product')->where('user_id', auth()->id())->latest()->get();
         return view('vendedor.vendas_historico', compact('vendas'));
-    }
-
-    private function calcularTotal($carrinho)
-    {
-        return array_reduce($carrinho, fn($total, $item) => $total + $item['preco'] * $item['quantidade'], 0);
     }
 }
